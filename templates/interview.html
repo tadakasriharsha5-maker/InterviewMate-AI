@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Interview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="interview-container">
+
+    <h1>Mock Interview</h1>
+
+    <p>Job Role: {{ role }}</p>
+
+    <p>Question {{ number }} of {{ total }}</p>
+
+    <div class="question-card">
+        <h2>{{ question }}</h2>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <form action="/submit-answer" method="POST">
+
+        <label>Your Answer</label>
+
+        <textarea
+            name="answer"
+            rows="8"
+            placeholder="Write your answer here..."
+            required></textarea>
+
+        <button type="submit">
+            Submit Answer
+        </button>
+
+    </form>
+
+    <a href="/dashboard">Cancel Interview</a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - InterviewMate AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="form-container">
+    <h1>Welcome Back!</h1>
+    <p>Login to continue your interview preparation.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+        <label>Email Address</label>
+        <input type="email" name="email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" required>
+
+        <button type="submit">Login</button>
+    </form>
+
+    <p>Don't have an account? <a href="/register">Register</a></p>
+</div>
+
+</body>
+</html>

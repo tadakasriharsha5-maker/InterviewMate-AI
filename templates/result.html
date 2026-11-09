@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="result-container">
+
+    <h1>Your Interview Results</h1>
+
+    <div class="score-card">
+        <h2>{{ score }}/100</h2>
+        <p>Overall Practice Score</p>
+    </div>
+
+    <h2>Answer Feedback</h2>
+
+    {% for question in questions %}
+        <div class="history-item">
+            <h3>Question {{ loop.index }}</h3>
+            <p>{{ question }}</p>
+
+            <h4>Your Answer:</h4>
+            <p>{{ answers[loop.index0] }}</p>
+
+            <h4>Feedback:</h4>
+            <p>{{ feedback_list[loop.index0] }}</p>
+        </div>
+    {% endfor %}
+
+    <a href="/dashboard" class="button">Back to Dashboard</a>
+
+</div>
+
+</body>
+</html>

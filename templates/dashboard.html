@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - InterviewMate AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+    <div class="logo">InterviewMate <span>AI</span></div>
+    <nav>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/logout">Logout</a>
+    </nav>
+</header>
+
+<main class="dashboard">
+    <h1>Hello, {{ name }}!</h1>
+    <p>Welcome to your interview preparation dashboard.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="dashboard-card">
+        <h2>Start a Mock Interview</h2>
+
+        <form action="/interview" method="POST">
+            <label>Select your job role</label>
+
+            <select name="role" required>
+                {% for role in roles %}
+                    <option value="{{ role }}">{{ role }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Start Interview</button>
+        </form>
+    </section>
+
+    <section class="history">
+        <h2>Recent Interview History</h2>
+
+        {% if history %}
+            {% for item in history %}
+                <div class="history-item">
+                    <h3>{{ item.role }}</h3>
+                    <p>Question: {{ item.question }}</p>
+                    <p>Score: {{ item.score }}/100</p>
+                    <small>{{ item.created_at }}</small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No interviews completed yet. Start your first interview!</p>
+        {% endif %}
+    </section>
+</main>
+
+</body>
+</html>
