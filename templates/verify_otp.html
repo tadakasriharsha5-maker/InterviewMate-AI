@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - InterviewMate AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="form-container">
+    <h1>Verify OTP</h1>
+    <p>Enter the one-time password sent to your email.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+        <label>Email Address</label>
+        <input type="email" name="email" value="{{ email or '' }}" required>
+
+        <label>OTP</label>
+        <input type="text" name="otp" placeholder="Enter 6-digit OTP" maxlength="6" required>
+
+        <button type="submit">Verify OTP</button>
+    </form>
+
+    <p><a href="/forgot-password">Request a new OTP</a></p>
+</div>
+
+</body>
+</html>
