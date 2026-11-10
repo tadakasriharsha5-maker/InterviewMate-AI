@@ -1,6 +1,7 @@
 import sqlite3
+import os
 
-DATABASE = "interviewmate.db"
+DATABASE = os.environ.get("DATABASE_PATH", "interviewmate.db")
 
 
 def get_db():
@@ -30,6 +31,18 @@ def init_db():
             answer TEXT NOT NULL,
             score INTEGER NOT NULL,
             feedback TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS password_reset_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            otp TEXT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used INTEGER NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
