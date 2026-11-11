@@ -3,21 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mock Interview</title>
+    <title>{{ role }} Interview · InterviewMate AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
 
 <div class="interview-container">
+    <a href="/dashboard" class="back-link">← Dashboard</a>
+    <div class="interview-heading">
+        <div>
+            <p class="eyebrow">MOCK INTERVIEW</p>
+            <h1>{{ role }}</h1>
+        </div>
+        <span class="level-badge">{{ difficulty }}</span>
+    </div>
 
-    <h1>Mock Interview</h1>
-
-    <p>Job Role: {{ role }}</p>
-
-    <p>Question {{ number }} of {{ total }}</p>
+    <div class="question-progress">
+        <div class="progress-label">
+            <span>Question {{ number }} of {{ total }}</span>
+            <span>{{ progress }}% complete</span>
+        </div>
+        <div
+            class="progress-track"
+            role="progressbar"
+            aria-label="Interview progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="{{ progress }}">
+            <span class="progress-fill" style="--progress: {{ progress }}%"></span>
+        </div>
+    </div>
 
     <div class="question-card">
+        <p class="eyebrow">YOUR QUESTION</p>
         <h2>{{ question }}</h2>
+        <div class="question-voice">
+            <button
+                type="button"
+                id="speak-question"
+                class="voice-button"
+                data-audio-url="{{ url_for('question_audio') }}"
+                {% if not voice_enabled %}disabled{% endif %}>
+                Hear question
+            </button>
+            <p id="voice-status" role="status" aria-live="polite">
+                {% if voice_enabled %}
+                    Listen to this question with an AI interviewer voice.
+                {% else %}
+                    Voice is unavailable until OPENAI_API_KEY is configured on the server.
+                {% endif %}
+            </p>
+        </div>
+        <audio id="question-audio" controls hidden></audio>
     </div>
 
     {% with messages = get_flashed_messages() %}
@@ -28,21 +66,27 @@
 
     <form action="/submit-answer" method="POST">
 
-        <label>Your Answer</label>
+        <label for="answer">Your answer</label>
 
         <textarea
+            id="answer"
             name="answer"
             rows="8"
-            placeholder="Write your answer here..."
+            placeholder="Structure your thoughts and include a specific example where possible..."
+            aria-describedby="answer-guidance word-count"
             required></textarea>
+        <div class="answer-meta">
+            <span id="answer-guidance">Tip: explain your approach, then share the result.</span>
+            <span id="word-count" aria-live="polite">0 words</span>
+        </div>
 
         <button type="submit">
-            Submit Answer
+            Submit answer <span aria-hidden="true">→</span>
         </button>
 
     </form>
 
-    <a href="/dashboard">Cancel Interview</a>
+    <a href="/dashboard" class="cancel-link">End practice</a>
 
 </div>
 

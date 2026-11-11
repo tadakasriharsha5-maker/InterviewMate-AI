@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interview Results</title>
+    <title>Practice Results · InterviewMate AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
 <div class="result-container">
 
-    <h1>Your Interview Results</h1>
+    <p class="eyebrow">PRACTICE COMPLETE</p>
+    <h1>Your interview results</h1>
+    <p class="result-summary">{{ role }} <span aria-hidden="true">·</span> {{ difficulty }} level</p>
 
     <div class="score-card">
         <h2>{{ score }}/100</h2>
-        <p>Overall Practice Score</p>
+        <p>Overall practice score</p>
     </div>
 
-    <h2>Answer Feedback</h2>
+    <h2 class="feedback-heading">Answer feedback</h2>
 
     {% for question in questions %}
-        <div class="history-item">
+        <div class="history-item result-answer">
             <h3>Question {{ loop.index }}</h3>
             <p>{{ question }}</p>
 

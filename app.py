@@ -1,16 +1,19 @@
 from flask import (
-    Flask, render_template, request,
+    Flask, Response, jsonify, render_template, request,
     redirect, url_for, session, flash
 )
 
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import get_db, init_db
-from functools import wraps
+from functools import lru_cache, wraps
 from datetime import datetime, timedelta
+import json
 import os
 import random
 import smtplib
+import urllib.error
+import urllib.request
 from email.mime.text import MIMEText
 
 load_dotenv()
@@ -70,23 +73,154 @@ def send_otp_email(email, otp):
         return False
 
 
+@lru_cache(maxsize=90)
+def synthesize_question_audio(question):
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured.")
+
+    payload = json.dumps({
+        "model": "gpt-4o-mini-tts",
+        "voice": "marin",
+        "input": question,
+        "instructions": (
+            "Speak clearly and naturally as a friendly professional interviewer "
+            "asking a candidate this interview question."
+        ),
+        "response_format": "mp3"
+    }).encode("utf-8")
+    api_request = urllib.request.Request(
+        "https://api.openai.com/v1/audio/speech",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(api_request, timeout=30) as response:
+        return response.read()
+
+
 QUESTIONS = {
-    "Python Developer": [
-        "What is Python and why is it popular?",
-        "What is the difference between a list and a tuple?",
-        "Explain object-oriented programming."
-    ],
-    "Web Developer": [
-        "What is HTML?",
-        "What is the difference between CSS and JavaScript?",
-        "What is an API?"
-    ],
-    "Java Developer": [
-        "What is Java?",
-        "Explain inheritance in Java.",
-        "What is the difference between JDK and JRE?"
-    ]
+    "Python Developer": {
+        "Beginner": [
+            "What are some key features of Python?",
+            "How are lists and tuples different, and when would you use each?",
+            "What is the difference between a mutable and an immutable object?",
+            "How do you handle exceptions in Python?",
+            "What is a Python dictionary, and how do you look up a value?",
+            "What is the purpose of a virtual environment?",
+            "How does a for loop differ from a while loop?",
+            "What is the difference between a module and a package?",
+            "How would you read a file safely in Python?",
+            "How would you sort a list of dictionaries by one of their values?"
+        ],
+        "Intermediate": [
+            "What are decorators, and where have you used one?",
+            "Explain generators and how they differ from returning a list.",
+            "How does Python manage memory and garbage collection?",
+            "What is the difference between threading and multiprocessing in Python?",
+            "How do context managers work, and how would you create one?",
+            "What are *args and **kwargs used for?",
+            "How would you write and test a reusable API client?",
+            "What is the Global Interpreter Lock, and when does it matter?",
+            "How do you structure a medium-sized Python application?",
+            "How would you design a cache with expiration and invalidation?"
+        ],
+        "Advanced": [
+            "How would you profile and optimize a Python service with high latency?",
+            "Describe a robust strategy for managing concurrent tasks in Python.",
+            "How would you design a plugin architecture using Python?",
+            "What trade-offs would you consider when choosing between async I/O and threads?",
+            "How do Python descriptors and the method resolution order work?",
+            "How would you make a data-processing pipeline memory efficient?",
+            "How do you design backward-compatible Python library APIs?",
+            "What are common causes of memory leaks in long-running Python processes?",
+            "How would you investigate and resolve contention in a high-throughput service?",
+            "How would you ensure a Python service shuts down gracefully while cleaning up resources?"
+        ]
+    },
+    "Web Developer": {
+        "Beginner": [
+            "What is semantic HTML, and why is it useful?",
+            "How do the CSS box model and box-sizing property work?",
+            "What is the difference between a class and an ID in CSS?",
+            "What happens when a browser loads a web page?",
+            "What is the difference between GET and POST requests?",
+            "How do you make a web page responsive?",
+            "What is the purpose of HTML forms and their labels?",
+            "How do CSS Flexbox and Grid help with layouts?",
+            "What is an API, and how does a web page use one?",
+            "How do alt text and descriptive link labels help people use a website?"
+        ],
+        "Intermediate": [
+            "How do you manage client-side state in a complex web application?",
+            "What is the difference between authentication and authorization?",
+            "How would you improve the performance of a slow-loading page?",
+            "How do promises and async/await help manage asynchronous JavaScript?",
+            "What are common causes of cross-browser layout differences?",
+            "How would you design and validate a REST API endpoint?",
+            "How do you make interactive components accessible?",
+            "What is the purpose of content security policy headers?",
+            "How do you test a web interface across different screen sizes?",
+            "How would you reduce unnecessary re-renders in a component-based interface?"
+        ],
+        "Advanced": [
+            "How would you diagnose a production web performance regression?",
+            "How would you design a frontend architecture for a large team?",
+            "What trade-offs do server-side rendering and client-side rendering introduce?",
+            "How would you plan a safe migration from a legacy frontend?",
+            "How do caching strategies affect consistency and freshness in web applications?",
+            "How would you prevent a slow third-party script from blocking the user experience?",
+            "How would you design resilient frontend behavior for unreliable networks?",
+            "What metrics would you use to assess real-user web performance?",
+            "How would you approach accessibility in a large existing product?",
+            "How would you safely roll out a major frontend change to users?"
+        ]
+    },
+    "Java Developer": {
+        "Beginner": [
+            "What is the difference between the JDK, JRE, and JVM?",
+            "How do classes and objects relate in Java?",
+            "What is inheritance, and when is it useful?",
+            "How do primitive types differ from reference types?",
+            "What is the difference between an interface and a class?",
+            "How do you handle exceptions in Java?",
+            "What are the main access modifiers in Java?",
+            "How does an ArrayList differ from an array?",
+            "What is method overloading?",
+            "How do String, StringBuilder, and StringBuffer differ?"
+        ],
+        "Intermediate": [
+            "How do equals() and hashCode() work together?",
+            "When would you use a Java Stream instead of a loop?",
+            "How does the Java garbage collector affect application performance?",
+            "What is dependency injection, and what problem does it solve?",
+            "How do checked and unchecked exceptions differ?",
+            "How would you make a Java class immutable?",
+            "What are the benefits and risks of using CompletableFuture?",
+            "How do HashMap and ConcurrentHashMap differ?",
+            "How do you organize tests for a Spring service?",
+            "When is Optional useful, and when should you avoid using it?"
+        ],
+        "Advanced": [
+            "How would you investigate long garbage-collection pauses in production?",
+            "How would you design a high-throughput Java service?",
+            "What trade-offs do different JVM garbage collectors offer?",
+            "How do Java memory-model guarantees affect concurrent code?",
+            "How would you evolve a Java API without breaking existing clients?",
+            "How would you diagnose thread-pool saturation in a production service?",
+            "What design considerations matter when building a distributed Java system?",
+            "How would you reduce allocation pressure in a latency-sensitive application?",
+            "How would you structure observability for a large Java platform?",
+            "How would you plan a safe Java runtime upgrade across multiple services?"
+        ]
+    }
 }
+
+DIFFICULTIES = ("Beginner", "Intermediate", "Advanced")
+QUESTIONS_PER_INTERVIEW = 5
 
 
 def login_required(function):
@@ -325,6 +459,7 @@ def dashboard():
         "dashboard.html",
         name=session["name"],
         roles=QUESTIONS.keys(),
+        difficulties=DIFFICULTIES,
         history=history
     )
 
@@ -334,24 +469,60 @@ def dashboard():
 def interview():
     if request.method == "POST":
         role = request.form.get("role")
+        difficulty = request.form.get("difficulty")
 
         if role not in QUESTIONS:
             flash("Please select a valid job role.")
             return redirect(url_for("dashboard"))
 
+        if difficulty not in DIFFICULTIES:
+            flash("Please select a valid difficulty level.")
+            return redirect(url_for("dashboard"))
+
+        connection = get_db()
+        completed_questions = {
+            row["question"] for row in connection.execute(
+                """SELECT question FROM interviews
+                   WHERE user_id = ? AND role = ? AND difficulty = ?""",
+                (session["user_id"], role, difficulty)
+            ).fetchall()
+        }
+        connection.close()
+
+        question_pool = QUESTIONS[role][difficulty]
+        unseen_questions = [
+            question for question in question_pool
+            if question not in completed_questions
+        ]
+        question_count = min(QUESTIONS_PER_INTERVIEW, len(question_pool))
+        if len(unseen_questions) >= question_count:
+            interview_questions = random.sample(unseen_questions, question_count)
+        else:
+            previously_seen = [
+                question for question in question_pool
+                if question in completed_questions
+            ]
+            interview_questions = unseen_questions + random.sample(
+                previously_seen, question_count - len(unseen_questions)
+            )
+            random.shuffle(interview_questions)
+
         session["role"] = role
+        session["difficulty"] = difficulty
+        session["interview_questions"] = interview_questions
         session["question_index"] = 0
         session["answers"] = []
 
         return redirect(url_for("interview"))
 
     role = session.get("role")
+    difficulty = session.get("difficulty")
+    questions = session.get("interview_questions", [])
 
-    if not role:
+    if role not in QUESTIONS or difficulty not in DIFFICULTIES or not questions:
         return redirect(url_for("dashboard"))
 
     index = session.get("question_index", 0)
-    questions = QUESTIONS[role]
 
     if index >= len(questions):
         return redirect(url_for("result"))
@@ -359,9 +530,55 @@ def interview():
     return render_template(
         "interview.html",
         role=role,
+        difficulty=difficulty,
         question=questions[index],
         number=index + 1,
-        total=len(questions)
+        total=len(questions),
+        progress=round(index / len(questions) * 100),
+        voice_enabled=bool(os.environ.get("OPENAI_API_KEY"))
+    )
+
+
+@app.route("/api/question-audio", methods=["POST"])
+def question_audio():
+    if "user_id" not in session:
+        return jsonify(error="Please log in to hear interview questions."), 401
+
+    if request.headers.get("X-Requested-With") != "XMLHttpRequest":
+        return jsonify(error="Invalid request."), 400
+
+    if not os.environ.get("OPENAI_API_KEY"):
+        return jsonify(error="Voice is not configured. Add OPENAI_API_KEY to the server environment."), 503
+
+    role = session.get("role")
+    difficulty = session.get("difficulty")
+    questions = session.get("interview_questions", [])
+    index = session.get("question_index", 0)
+    if (
+        role not in QUESTIONS or difficulty not in DIFFICULTIES
+        or not isinstance(index, int) or index < 0
+        or index >= len(questions)
+    ):
+        return jsonify(error="There is no active interview question to read."), 409
+
+    question = questions[index]
+    if question not in QUESTIONS[role][difficulty]:
+        return jsonify(error="The current interview question is invalid."), 409
+
+    try:
+        audio = synthesize_question_audio(question)
+    except urllib.error.HTTPError as error:
+        app.logger.error("OpenAI text-to-speech returned HTTP %s.", error.code)
+        error.close()
+        return jsonify(error="Voice generation failed. Please try again later."), 502
+    except (urllib.error.URLError, TimeoutError) as error:
+        app.logger.error("Could not reach OpenAI text-to-speech: %s", error)
+        return jsonify(error="Voice service could not be reached. Please try again."), 502
+
+    return Response(
+        audio,
+        mimetype="audio/mpeg",
+        headers={"Cache-Control": "private, no-store"}
     )
 
 
@@ -369,10 +586,14 @@ def interview():
 @login_required
 def submit_answer():
     role = session.get("role")
+    difficulty = session.get("difficulty")
     index = session.get("question_index", 0)
-    questions = QUESTIONS.get(role)
+    questions = session.get("interview_questions", [])
 
-    if not questions or index >= len(questions):
+    if (
+        role not in QUESTIONS or difficulty not in DIFFICULTIES
+        or not questions or index >= len(questions)
+    ):
         return redirect(url_for("dashboard"))
 
     answer = request.form.get("answer", "").strip()
@@ -391,12 +612,15 @@ def submit_answer():
 @login_required
 def result():
     role = session.get("role")
+    difficulty = session.get("difficulty")
     answers = session.get("answers", [])
+    questions = session.get("interview_questions", [])
 
-    if not role or len(answers) != len(QUESTIONS.get(role, [])):
+    if (
+        role not in QUESTIONS or difficulty not in DIFFICULTIES
+        or not questions or len(answers) != len(questions)
+    ):
         return redirect(url_for("dashboard"))
-
-    questions = QUESTIONS[role]
 
     # Starter evaluation: answer completeness, not AI evaluation.
     scores = []
@@ -427,10 +651,10 @@ def result():
     ):
         connection.execute(
             """INSERT INTO interviews
-               (user_id, role, question, answer, score, feedback)
-               VALUES (?, ?, ?, ?, ?, ?)""",
+               (user_id, role, difficulty, question, answer, score, feedback)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (
-                session["user_id"], role, question,
+                session["user_id"], role, difficulty, question,
                 answer, score, feedback
             )
         )
@@ -439,12 +663,16 @@ def result():
     connection.close()
 
     session.pop("role", None)
+    session.pop("difficulty", None)
+    session.pop("interview_questions", None)
     session.pop("question_index", None)
     session.pop("answers", None)
 
     return render_template(
         "result.html",
         score=overall_score,
+        role=role,
+        difficulty=difficulty,
         feedback_list=feedback_list,
         answers=answers,
         questions=questions
