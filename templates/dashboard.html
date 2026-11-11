@@ -17,8 +17,9 @@
 </header>
 
 <main class="dashboard">
+    <p class="tag">YOUR PRACTICE SPACE</p>
     <h1>Hello, {{ name }}!</h1>
-    <p>Welcome to your interview preparation dashboard.</p>
+    <p>Build confidence with focused, role-specific interview practice.</p>
 
     {% with messages = get_flashed_messages() %}
         {% for message in messages %}
@@ -27,28 +28,53 @@
     {% endwith %}
 
     <section class="dashboard-card">
-        <h2>Start a Mock Interview</h2>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">PERSONALIZED PRACTICE</p>
+                <h2>Start a mock interview</h2>
+            </div>
+            <span class="question-count">5 questions · about 10 minutes</span>
+        </div>
 
         <form action="/interview" method="POST">
-            <label>Select your job role</label>
-
-            <select name="role" required>
-                {% for role in roles %}
-                    <option value="{{ role }}">{{ role }}</option>
-                {% endfor %}
-            </select>
-
-            <button type="submit">Start Interview</button>
+            <div class="setup-fields">
+                <div>
+                    <label for="role">Job role</label>
+                    <select id="role" name="role" required>
+                        {% for role in roles %}
+                            <option value="{{ role }}">{{ role }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="difficulty">Difficulty level</label>
+                    <select id="difficulty" name="difficulty" required>
+                        {% for difficulty in difficulties %}
+                            <option value="{{ difficulty }}">{{ difficulty }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit">Start your practice</button>
         </form>
+        <p class="form-hint">Questions are randomized and won’t repeat within a practice session.</p>
     </section>
 
     <section class="history">
-        <h2>Recent Interview History</h2>
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">YOUR PROGRESS</p>
+                <h2>Recent practice</h2>
+            </div>
+        </div>
 
         {% if history %}
             {% for item in history %}
                 <div class="history-item">
-                    <h3>{{ item.role }}</h3>
+                    <div class="history-title">
+                        <h3>{{ item.role }}</h3>
+                        <span class="level-badge">{{ item.difficulty }}</span>
+                    </div>
                     <p>Question: {{ item.question }}</p>
                     <p>Score: {{ item.score }}/100</p>
                     <small>{{ item.created_at }}</small>
