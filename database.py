@@ -27,6 +27,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             role TEXT NOT NULL,
+            difficulty TEXT NOT NULL DEFAULT 'Beginner',
             question TEXT NOT NULL,
             answer TEXT NOT NULL,
             score INTEGER NOT NULL,
@@ -35,6 +36,16 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
+
+    interview_columns = {
+        row["name"] for row in connection.execute(
+            "PRAGMA table_info(interviews)"
+        ).fetchall()
+    }
+    if "difficulty" not in interview_columns:
+        connection.execute(
+            "ALTER TABLE interviews ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'Beginner'"
+        )
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS password_reset_requests (
