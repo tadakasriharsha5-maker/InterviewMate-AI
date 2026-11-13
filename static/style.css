@@ -46,7 +46,7 @@ body::after {
     filter: blur(2px);
     opacity: 0.16;
     pointer-events: none;
-    animation: float 12s ease-in-out infinite alternate;
+    animation: ambient-drift 15s ease-in-out infinite alternate;
 }
 
 body::before {
@@ -75,6 +75,19 @@ header {
     border-bottom: 1px solid rgba(148, 163, 184, 0.22);
     box-shadow: 0 8px 24px rgba(30, 41, 59, 0.04);
     backdrop-filter: blur(14px);
+    animation: rise-in 450ms both;
+}
+
+header::after {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #ec4899, #14b8a6, #f59e0b, #6366f1);
+    background-size: 200% 100%;
+    content: "";
+    animation: gradient-flow 9s linear infinite;
 }
 
 .logo {
@@ -86,6 +99,11 @@ header {
 
 .logo span {
     color: var(--purple);
+    background: linear-gradient(90deg, #4f46e5, #ec4899, #0ea5a4, #4f46e5);
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-flow 7s linear infinite;
 }
 
 nav {
@@ -158,8 +176,10 @@ button:active {
 .hero h1 span {
     color: var(--purple);
     background: linear-gradient(90deg, var(--purple-deep), var(--purple), #0f9f9a);
+    background-size: 200% 100%;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: gradient-flow 8s linear infinite;
 }
 
 .tag {
@@ -211,11 +231,12 @@ button:active {
     border-radius: 16px;
     color: white;
     background: linear-gradient(135deg, #3730a3, #4f46e5 55%, #0f9f9a);
+    background-size: 200% 200%;
     box-shadow: 0 16px 32px rgba(79, 70, 229, 0.22);
     font-size: 35px;
     font-weight: 800;
     text-align: center;
-    animation: glow 3s ease-in-out infinite alternate;
+    animation: glow 3s ease-in-out infinite alternate, gradient-flow 8s linear infinite;
 }
 
 .features {
@@ -237,7 +258,20 @@ button:active {
 }
 
 .feature {
+    animation: rise-in 650ms both;
     transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.feature:nth-child(1) {
+    animation-delay: 80ms;
+}
+
+.feature:nth-child(2) {
+    animation-delay: 180ms;
+}
+
+.feature:nth-child(3) {
+    animation-delay: 280ms;
 }
 
 .feature:nth-child(3n + 1) {
@@ -336,6 +370,13 @@ select:focus {
     transform: translateY(-1px);
 }
 
+input:hover:not(:focus),
+textarea:hover:not(:focus),
+select:hover:not(:focus) {
+    border-color: #a5b4fc;
+    box-shadow: 0 5px 16px rgba(99, 102, 241, 0.08);
+}
+
 textarea {
     resize: vertical;
     background: #ffffff;
@@ -386,6 +427,10 @@ label {
     margin-top: 30px;
 }
 
+.dashboard-card {
+    animation: rise-in 650ms 100ms both;
+}
+
 .dashboard-card select {
     max-width: 350px;
 }
@@ -429,6 +474,7 @@ label {
     border-radius: 999px;
     color: #4338ca;
     background: #eef2ff;
+    transition: transform 180ms ease, box-shadow 180ms ease;
     font-size: 0.82rem;
     font-weight: 700;
     white-space: nowrap;
@@ -465,6 +511,13 @@ label {
     margin-top: 15px;
     border-left: 4px solid #818cf8;
     animation: rise-in 450ms both;
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.history-item:hover {
+    transform: translateY(-3px);
+    border-left-color: #14b8a6;
+    box-shadow: 0 22px 42px rgba(85, 69, 173, 0.14);
 }
 
 .history-item:nth-of-type(2) {
@@ -525,6 +578,12 @@ label {
     color: #3730a3;
     background: #eef2ff;
     box-shadow: 0 6px 16px rgba(79, 70, 229, 0.12);
+}
+
+.question-count:hover,
+.level-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 16px rgba(99, 102, 241, 0.14);
 }
 
 .voice-button:disabled {
@@ -637,6 +696,7 @@ label {
     margin: 25px 0;
     background: linear-gradient(135deg, #f3f4ff, #f1f5ff 48%, #ecfdf9 100%);
     border: 1px solid rgba(99, 102, 241, 0.16);
+    animation: score-reveal 700ms both;
 }
 
 .score-card h2 {
@@ -645,6 +705,7 @@ label {
     background: linear-gradient(90deg, var(--purple-deep), var(--purple));
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: score-pop 650ms 180ms both;
 }
 
 .result-container .button {
@@ -720,11 +781,57 @@ select:focus-visible {
 
 @keyframes glow {
     from {
-        box-shadow: 0 12px 25px rgba(157, 83, 227, 0.2);
+        box-shadow: 0 12px 25px rgba(157, 83, 227, 0.2), 0 0 12px rgba(20, 184, 166, 0.12);
     }
 
     to {
-        box-shadow: 0 14px 34px rgba(244, 91, 154, 0.38);
+        box-shadow: 0 14px 34px rgba(244, 91, 154, 0.38), 0 0 24px rgba(20, 184, 166, 0.26);
+    }
+}
+
+@keyframes ambient-drift {
+    from {
+        transform: translate3d(0, -8px, 0) scale(0.94);
+        filter: hue-rotate(0deg);
+    }
+
+    to {
+        transform: translate3d(12px, 14px, 0) scale(1.08);
+        filter: hue-rotate(45deg);
+    }
+}
+
+@keyframes gradient-flow {
+    from {
+        background-position: 0% 50%;
+    }
+
+    to {
+        background-position: 200% 50%;
+    }
+}
+
+@keyframes score-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes score-pop {
+    from {
+        opacity: 0;
+        transform: scale(0.82);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 
